@@ -1,44 +1,36 @@
-#define _XOPEN_SOURCE 600
-#include <stdlib.h>
-
 #include <stdio.h>
-#include <fcntl.h>
 #include <unistd.h>
 
-#define PTMX    "/dev/ptmx"
+#include "common.h"
+#include "pty_master.h"
+#include "pty_slaver.h"
+
+#define INPUT_MSG "Input: "
 #define BUFSIZE 1024
 
-extern int grantpt (int __fd) __THROW;
-extern int unlockpt (int __fd) __THROW;
-extern char *ptsname (int __fd) __THROW __wur;
 
 int
 main(int argc, char **argv) {
-  int mfd = open(PTMX, O_RDWR);
-  grantpt(mfd);
-  unlockpt(mfd);
-  fprintf(stderr, "%s\n", ptsname(mfd));
+  int fdm;
+  int fds;
 
-  char buf[BUFSIZE];
+  if ((fdm = get_pty_master_fd()) < 0) {
+    return -1;
+  }
+  if ((fds = get_pty_slaver_fd(fdm)) < 0) {
+    close(fdm);
+    return -1;
+  }
+
   int pid = fork();
-  if (pid) {
-    while (1) {
-      int n = read(mfd, buf, BUFSIZE);
-      if (n > 0) {
-        write(1, buf, n);
-      } else {
-        exit(1);
-      }
-    }
+  if (pid != 0) {
+    close(fds);
+    master_stdio(fdm);
+    close(fdm);
   } else {
-    while (1) {
-      int n = read(0, buf, BUFSIZE);
-      if (n > 0) {
-        write(mfd, buf, n);
-      } else {
-        exit(1);
-      }
-    }
+    close(fdm);
+    slaver_echo(fds);
+    close(fds);
   }
 
   return 0;

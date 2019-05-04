@@ -1,7 +1,7 @@
 .SUFFIXES:	.c
 
 CC		= gcc
-CFLAGS	= -Wall -g
+CFLAGS	= -Wall -g -I./include
 SRC		= $(wildcard ./src/*.c)
 OBJ		= $(SRC:./src/%.c=./build/%.o)
 DEP		= $(OBJ:%.o=%.d)
