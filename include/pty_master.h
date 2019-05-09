@@ -5,4 +5,6 @@ extern int echo_input();
 
 extern int master_stdio(int fdm);
 
+extern int master_tty(int fdm, int fdi, int fdo);
+
 #endif
